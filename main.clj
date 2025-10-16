@@ -18,33 +18,31 @@
 ;; Problem 03
 
 (defn element-at [lst k]
-  (letfn [(helper [lst1 n]
+  (letfn [(count-elements-get-kth [lst1 n]
             (cond
               (or (empty? lst1) (< n 1)) nil
               (= n 1) (first lst1)
-              :else (helper (rest lst1) (- n 1))))]
-    (helper lst k)))
+              :else (count-elements-get-kth (rest lst1) (- n 1))))]
+    (count-elements-get-kth lst k)))
 (element-at '(a b c d) 3)
 
 ;; Problem 04
 
-(defn len [lst]
-  (letfn [(helper [lst1 k]
-            (cond
-              (empty? lst1) k
-              :else (helper (rest lst1) (+ k 1))))]
-  (helper lst 0)))
+(defn len
+  ([lst] (len lst 0))
+  ([lst k] (cond
+              (empty? lst) k
+              :else (len (rest lst) (+ k 1)))))
 
 ;; Problem 05
 
-(defn rev [lst]
-  (letfn
-      [(rev-helper [lst1 acc]
-         (if (empty? lst1) acc
-             (rev-helper
-              (rest lst1)
-              (cons (first lst1) acc))))]
-    (rev-helper lst '())))
+(defn rev 
+  ([lst] (rev lst '()))
+  ([lst accumulator]
+   (if (empty? lst) accumulator
+       (rev
+        (rest lst)
+        (cons (first lst) accumulator)))))
 
 ;; Problem 06
 
@@ -69,26 +67,25 @@
 
 ;; Problem 09
 
-(defn pack [lst]
-  (letfn [(iter [lst2 acc]
-            (cond
-              (empty? lst2) acc
-              (= (first lst2) (second lst2)) (iter (rest lst2) (concat (list (first lst2)) acc))
-              :else (cons (concat (list (first lst2)) acc) (pack (rest lst2))))
-            )]
-    (iter lst '())))
+(defn pack
+  ([lst] (pack lst '()))
+  ([lst accumulator]
+   (cond
+     (empty? lst) accumulator
+     (= (first lst) (second lst)) (pack (rest lst) (concat (list (first lst)) accumulator))
+     :else (cons (concat (list (first lst)) accumulator) (pack (rest lst))))))
+
 (pack '(a a a a b c c a a d e e e e))
 
 ;; Problem 10
 
-(defn encode [lst]
-  (letfn [(iter [lst2 n]
-            (cond
-              (empty? lst2) nil
-              (= (first lst2) (second lst2)) (iter (rest lst2) (inc n))
-              :else (cons (list n (first lst2)) (encode (rest lst2))))
-            )]
-    (iter lst 1)))
+(defn encode
+  ([lst] (encode lst 1))
+  ([lst n]
+   (cond
+     (empty? lst) nil
+     (= (first lst) (second lst)) (encode (rest lst) (inc n))
+     :else (cons (list n (first lst)) (encode (rest lst))))))
 (encode '(a a a a b c c a a d e e e e))
 
 ;; Problem 11
@@ -167,10 +164,13 @@
     (iter 1 '() lst)))
 
 ;; Problem 19
+
 (defn rotate [lst n]
-  (if (< n 0) (rotate lst (+ (len lst) n))
-      (reduce concat (split lst n))))
-(rotate '(a b c d e f g h) -2)
+  (let [k (rem n (len lst)) splat (split lst k)]
+    (if (< n 0) (rotate lst (+ (len lst) n))
+        (reduce concat (list (second splat) (first splat))))))
+
+(rotate '(a b c d e f g h) -1)
 
 ;; Problem 20
 (defn remove-at [lst n]
@@ -194,8 +194,7 @@
 
 (defn rnd-select [lst n]
   (let [pos (inc (rand-int (len lst))) ]
-    (if (= n 0) '() (cons (element-at lst pos) (rnd-select (remove-at lst pos) (dec n))))
-    ))
+    (if (= n 0) '() (cons (element-at lst pos) (rnd-select (remove-at lst pos) (dec n))))))
 
 ;; Problem 24
 
@@ -209,12 +208,16 @@
 
 (defn combination [k lst]
   (cond
-    (= k (len lst)) lst
-    (= k 0) '()
     (empty? lst) '()
-    :else (cons (combination k (rest lst)) (cons (first lst) (combination (dec k) (rest lst))))))
-(combination 2 '(w u r b g))
+    (= k 0) '()
+    (= k 1) (map list lst)
+    (> k (count lst)) '()
+    :else (concat
+           (map #(cons (first lst) %) (combination (dec k) (rest lst)))
+           (combination k (rest lst)))))
+
 ;; Problem 32
+
 (defn gcd [a b]
   (if (= 0 b) a (gcd b (rem a b))))
 
