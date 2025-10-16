@@ -1,0 +1,9 @@
+#+title: Ninety-Nine Lisp Problems
+
+In this repo, I will add the solutions of the [[https://www.ic.unicamp.br/~meidanis/courses/mc336/problemas-lisp/L-99_Ninety-Nine_Lisp_Problems.html][Ninety-Nine Lisp
+Problems]] as I solve them, in order to become a better LISP
+practicioner. This will be also achieved using [[https://clojure.org/][Clojure]], much like my
+choice of [[https://github.com/morazotti/sicp-solutions][Structure and Interpretation of Computer Programs]] solutions.
+
+I will try to be as idiomatic as I can, avoiding as many predefined
+functions as possible.
