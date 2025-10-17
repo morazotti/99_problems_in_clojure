@@ -1,3 +1,5 @@
+(require '[clojure.math :as m])
+
 ;; Problem 01
 
 (defn my-last [lst]
@@ -173,12 +175,14 @@
 (rotate '(a b c d e f g h) -1)
 
 ;; Problem 20
+
 (defn remove-at [lst n]
   (concat (slice lst 1 (dec n)) (slice lst (inc n) (len lst))))
 
 (remove-at '(a b c d) 1)
 
 ;; Problem 21
+
 (defn insert-at [value lst n]
   (let [[fst snd] (split lst (dec n))]
     (concat fst (list value) snd)))
@@ -186,9 +190,17 @@
 
 
 ;; Problem 22
-(defn my-range [lo hi]
+
+(defn my-old-range [lo hi]
   (if (> lo hi) '()
-      (cons lo (my-range (inc lo) hi))))
+      (cons lo (my-old-range (inc lo) hi))))
+
+(defn my-range
+  ([hi] (my-range 1 hi))
+  ([lo hi] (letfn [(natural
+            ([] (natural 1))
+            ([n] (lazy-seq (cons n (natural (inc n))))))]
+    (take (inc (- hi lo)) (natural lo)))))
 
 ;; Problem 23
 
@@ -216,6 +228,25 @@
            (map #(cons (first lst) %) (combination (dec k) (rest lst)))
            (combination k (rest lst)))))
 
+;; Problem 27
+
+;; Problem 28
+
+;; Problem 31
+
+(defn next-factor [n] (if (= n 2) 3 (+ 2 n)))
+(defn divides? [n a] (= 0 (mod n a)))
+(defn square [n] (* n n))
+(defn find-divisor [n test-divisor]
+              (cond
+                (> (square test-divisor) n) n 
+                (divides? n test-divisor) test-divisor 
+                :else (recur n (next-factor test-divisor))))
+(defn smallest-divisor [n] (find-divisor n 2))
+
+(defn prime? [n]
+    (if (= n 1) false (= n (smallest-divisor n))))
+
 ;; Problem 32
 
 (defn gcd [a b]
@@ -230,3 +261,60 @@
   (len (filter #(not (nil? %))
                (map #(when (coprime n %) %)
                     (my-range 1 (dec n))))))
+
+;; Problem 35
+
+(defn prime-factors [n]
+  (let [x (smallest-divisor n)]
+    (if (= 1 n) '()
+        (concat (list x) (prime-factors (/ n x))))))
+
+;; Problem 36
+
+(defn prime-factors-mult [n]
+  (map #(list (second %) (first %))
+       (encode (prime-factors n))))
+
+(prime-factors-mult 315)
+
+;; Problem 37
+
+(defn phimproved [m]
+  (let [factors (prime-factors-mult m)]
+    (letfn [(mult-and-pow [[p m]]
+             (* (dec p) (m/pow  p (dec m))))]
+      (reduce * (map mult-and-pow factors)))))
+
+;; Problem 38
+(phimproved 10090) ;; => 4032
+(phi 10090) ;; => StackOverflow
+
+;; Problem 39
+(defn primes
+  ([hi] (primes 1 hi))
+  ([lo hi] (filter prime? (my-range lo hi))))
+
+;; Problem 40
+
+(defn goldbach
+  ([n] (goldbach n (primes n)))
+  ([n primes]
+   (let [x (first primes) diff (- n x)]
+     (if (prime? diff) (list x diff) (goldbach n (rest primes))))))
+
+;; Problem 41
+
+(defn big-primes?
+  ([lst] (big-primes? lst 50))
+  ([lst v] (let [fsecond (comp first second)]
+   (> (fsecond lst) v))))
+
+(defn goldbach-list
+  ([hi] (goldbach-list 1 hi))
+  ([lo hi]
+   (map #(list % (goldbach %)) (filter even? (my-range lo hi))))
+  ([lo hi minimum] (filter #(big-primes? % minimum)
+                           (goldbach-list 1 hi))))
+
+(len (filter big-primes? (goldbach-list 2 3000 50))) ;; => 10
+(len (filter big-primes? (goldbach-list 2 9000 50))) ;; => 81
