@@ -111,7 +111,9 @@
            (concat (list (second pair))
                    (uncompress (dec-pair pair)))))
        (decode-one [pair-or-single]
-         (if (not (list? pair-or-single)) (list pair-or-single) (uncompress pair-or-single)))]
+         (if (not (list? pair-or-single))
+           (list pair-or-single)
+           (uncompress pair-or-single)))]
     (reduce concat (map decode-one encoded))))
 
 ;; Problem 14
@@ -135,13 +137,13 @@
 
 ;; Problem 16
 (defn drop-nth [lst n]
-  (letfn [(helper [acc lst1 k]
+  (letfn [(iter [acc lst1 k]
             (cond
               (empty? lst1) acc
-              (= k n) (helper acc (rest lst1) 1)
-              :else (helper (concat acc (list (first lst1))) (rest lst1) (+ k 1)))
-           )]
-    (helper '() lst 1)))
+              (= k n) (iter acc (rest lst1) 1)
+              :else (iter (concat acc (list (first lst1)))
+                          (rest lst1) (+ k 1))))]
+    (iter '() lst 1)))
 (drop-nth '(a b c d e f g h i k) 3)
   
 ;; Problem 17
@@ -168,8 +170,8 @@
 ;; Problem 19
 
 (defn rotate [lst n]
-  (let [k (rem n (len lst)) splat (split lst k)]
-    (if (< n 0) (rotate lst (+ (len lst) n))
+  (let [k (rem n (count lst)) splat (split lst k)]
+    (if (< n 0) (rotate lst (+ (count lst) n))
         (reduce concat (list (second splat) (first splat))))))
 
 (rotate '(a b c d e f g h) -1)
@@ -177,7 +179,7 @@
 ;; Problem 20
 
 (defn remove-at [lst n]
-  (concat (slice lst 1 (dec n)) (slice lst (inc n) (len lst))))
+  (concat (slice lst 1 (dec n)) (slice lst (inc n) (count lst))))
 
 (remove-at '(a b c d) 1)
 
@@ -205,7 +207,7 @@
 ;; Problem 23
 
 (defn rnd-select [lst n]
-  (let [pos (inc (rand-int (len lst))) ]
+  (let [pos (inc (rand-int (count lst))) ]
     (if (= n 0) '() (cons (element-at lst pos) (rnd-select (remove-at lst pos) (dec n))))))
 
 ;; Problem 24
@@ -221,16 +223,82 @@
 (defn combination [k lst]
   (cond
     (empty? lst) '()
-    (= k 0) '()
-    (= k 1) (map list lst)
+    (zero? k) '()
+    (= 1 k) (map list lst)
     (> k (count lst)) '()
     :else (concat
            (map #(cons (first lst) %) (combination (dec k) (rest lst)))
            (combination k (rest lst)))))
 
 ;; Problem 27
+(defn group [lst amnt]
+  (if (empty? amnt) '(())
+      (letfn [(get-elems-from-position-list [positions]
+                (map #(element-at lst %) positions))
 
-;; Problem 28
+              (remove-elems-from-position-list [positions]
+                (loop [lst lst
+                       positions (reverse positions)]
+                 (if (or (empty? positions) (empty? lst)) lst (recur (remove-at lst (first positions)) (rest positions)))))]
+
+        (let [elems (my-range 1 (count lst))
+              combs (combination (first amnt) elems)
+              lst-chosen (map get-elems-from-position-list combs)
+              lst-remaining (map remove-elems-from-position-list combs)
+              lst-elems (map #(cons %1 (list %2)) lst-chosen lst-remaining)
+              ]
+          (mapcat
+           (fn [[chosen remaining]]
+             (if (empty? (rest amnt)) (list (list chosen))
+                 (map #(cons chosen %) (group remaining (rest amnt)))))
+           lst-elems)))))
+
+(defn group-cgpt [lst amnt]
+  (if (empty? amnt) '(())
+      (mapcat
+       (fn [comb]
+         (let [remaining
+               (reduce (fn [acc elems] (remove #{elems} acc)) lst comb)]
+           (map #(cons comb %) (group-cgpt remaining (rest amnt)))))
+       (combination (first amnt) lst))))
+
+
+(group-cgpt '(aldo beat carla david evi flip gary hugo ida) '(2 2 5))
+
+;; Problem 28 a
+
+(defn lsort
+  ([coll] (lsort coll identity))
+  ([coll f]
+   (letfn [(smallest? [x coll1]
+             (cond
+               (empty? coll1) true
+               (> (f x) (f (first coll1))) false
+               :else (smallest? x (rest coll1))))]
+
+     (loop [coll coll acc '()]
+       (cond
+         (empty? coll) acc 
+         (smallest? (first coll)
+                    (rest coll))
+         (recur (rest coll)
+                (concat acc (list (first coll))))
+         :else (recur (rotate coll 1) acc))))))
+
+(lsort '((a b c) (d e) (f g h) (d e) (i j k l) (m n) (o)) count)
+
+;; Problem 28 b
+
+(defn lfsort [l]
+  (let [freq-of-lens (lsort (encode (lsort (map count l))) first)]
+    (letfn [(get-elems-with-length [length lst]
+              (cond (empty? lst) '()
+                    (= length (count (first lst)))
+                    (cons (first lst) (get-elems-with-length length (rest lst)))
+                    :else (get-elems-with-length length (rest lst))))]
+      (mapcat #(get-elems-with-length (second %) l) freq-of-lens))))
+
+(lfsort '((a b c) (d e) (f g h) (d e) (i j k l) (m n) (o)))
 
 ;; Problem 31
 
