@@ -77,7 +77,7 @@
      (= (first lst) (second lst)) (pack (rest lst) (concat (list (first lst)) accumulator))
      :else (cons (concat (list (first lst)) accumulator) (pack (rest lst))))))
 
-(pack '(a a a a b c c a a d e e e e))
+(compress '(a a a a b c c a a d e e e e))
 
 ;; Problem 10
 
@@ -156,6 +156,7 @@
     (list (first-part n lst '()) (second-part n lst))))
 
 (split '(a b c d e f g h i k) 3)
+
 
 ;; Problem 18
 (defn slice [lst start end]
@@ -375,7 +376,7 @@
 (defn big-primes?
   ([lst] (big-primes? lst 50))
   ([lst v] (let [fsecond (comp first second)]
-   (> (fsecond lst) v))))
+             (> (fsecond lst) v))))
 
 (defn goldbach-list
   ([hi] (goldbach-list 1 hi))
@@ -386,3 +387,192 @@
 
 (len (filter big-primes? (goldbach-list 2 3000 50))) ;; => 10
 (len (filter big-primes? (goldbach-list 2 9000 50))) ;; => 81
+
+;; Problem 46
+
+(defn nor [x y] (not (or x y)))
+(defn xor [x y] (or (and x (not y))
+                    (and (not x) y)))
+(defn impl [x y] (or x (not y)))
+(defn equ [x y] (not (xor x y)))
+
+(defn substitute [expr old new]
+  (cond
+    (= expr old) new
+    (list? expr) (map #(substitute % old new) expr)
+    :else expr))
+
+(defn table [A B expr]
+  (let [a '(true false)
+        b '(true false)]
+    (map (fn [e] (map #(list % (substitute e B %))) b) (map #(substitute expr A %) a))))
+
+(table 'A 'B '(and A B))
+
+;; Problem 54A
+
+(defn tree? [tree]
+  (cond
+    (nil? tree) true
+    (= 3 (count tree)) (apply (fn [x y] (and x y)) (map tree? (rest tree)))
+    :else false))
+
+;; for fun
+(defn invert-tree [tree]
+  (let [[a b c] tree]
+    (cond
+      (nil? tree) nil 
+      :else (list a (invert-tree c) (invert-tree b)))))
+
+;; Problem 55
+
+;; Problem 56
+
+;; Problem 61
+
+(defn first-count-leaves
+  ([tree] (count-leaves tree 0))
+  ([tree n]
+   (let [[a b c] tree]
+     (cond
+       (empty? tree) n
+       (and (nil? b) (nil? c)) (inc n) 
+       :else (apply + (map #(count-leaves % n) (rest tree))))
+     )))
+
+;; Problem 61A
+(defn leaves
+  ([tree] (leaves tree '()))
+  ([tree acc]
+   (let [[a b c] tree]
+     (cond
+       (nil? tree) acc
+       (and (nil? b) (nil? c)) (cons tree acc)
+       :else (mapcat #(leaves % acc) (rest tree))))))
+
+;; knowing that `leaves` collects the leaves, it suffices to count them
+(defn count-leaves [tree] (count (leaves tree)))
+
+;; Problem 62
+
+;; Problem 70B
+(defn multi-tree? [tree]
+  (cond
+    (empty? tree) true
+    (not (list? (first tree))) true
+    (and (list? tree) (>= (count tree) 2) (not (list? (first tree))) (multi-tree? (rest tree))) true
+    :else false)
+  )
+(multi-tree? '((a b) b c (d e)))
+
+;; Problem 90
+
+;; Problem 93
+
+(defn arith-puzzle [list-num] 
+  (let [ops '(+ - * /)]
+    (letfn [(possible-splits [l]
+             (map #(split l %)
+                  (my-range (dec (count l)))))
+
+           (apply-ops [l]
+             (cond
+               (empty? l) '()
+               (not (list? l)) l
+               (= 1 (count l)) (first l) 
+               :else
+               (cons
+                `(= (~(first ops) ~l) ~l
+                      ) '()
+                )
+
+               )
+             )]
+      (map apply-ops (possible-splits list-num)))))
+(arith-puzzle '(1 2 3 4))
+
+;; Problem 95
+
+(defn n-to-list
+  ([number] (n-to-list number '()))
+  ([number acc]
+   (if (< number 1) acc
+      (let [unit (rem number 10)]
+        (n-to-list (/ (- number unit) 10)
+                   (cons unit acc))))))
+
+(defn full-words [number]
+  (let [n (n-to-list number)]
+   (letfn [(number-to-word [nmb]
+             (cond
+               (= nmb 0) "zero"
+               (= nmb 1) "one"
+               (= nmb 2) "two"
+               (= nmb 3) "three"
+               (= nmb 4) "four"
+               (= nmb 5) "five"
+               (= nmb 6) "six"
+               (= nmb 7) "seven"
+               (= nmb 8) "eight"
+               (= nmb 9) "nine"))
+           (join-string-list [l]
+             (if (= 1 (count l)) (first l)
+                 (apply str (first l) "-"
+                        (join-string-list (rest l)))))]
+     (join-string-list (map number-to-word n)))))
+
+;; idiomatic way to rewrite
+;; didn't know that ([vec] n) gave the nth position of [vec]
+;; also, Character/digit was new to me
+
+(defn full-words2 [number]
+  (let [words ["zero" "one" "two" "three" "four"
+               "five" "six" "seven" "eight" "nine"]]
+    (->> (str number)
+         (map #(Character/digit % 10))
+         (map words)
+         (clojure.string/join "-"))))
+
+
+;; Problem 97
+(ns sudoku.core)
+
+(defn empty-pos [g]
+  ;; primeira posição com 0, ou nil se não há
+  (some (fn [[r c]] (when (zero? (get-in g [r c])) [r c]))
+        (for [r (range 9), c (range 9)] [r c])))
+
+(defn row-ok? [g r n] (not-any? #{n} (g r)))
+(defn col-ok? [g c n] (not-any? #{n} (map #(get-in g [% c]) (range 9))))
+(defn block-ok? [g r c n]
+  (let [x0 (* 3 (quot c 3))
+        y0 (* 3 (quot r 3))]
+    (not-any? #{n} (for [i (range 3), j (range 3)]
+                     (get-in g[(+ y0 i) (+ x0 j)])))))
+
+(defn valid? [g r c n]
+  (and (row-ok? g r n)
+       (col-ok? g c n)
+       (block-ok? g r c n)))g
+
+(defn solve [g]
+  (if-let [[r c] (empty-pos g)]
+    (mapcat
+     identity
+     (for [n (range 1 10) :when (valid? g r c n)]
+       (solve (assoc-in g [r c] n))))
+    g))
+
+
+(clojure.pprint/pprint
+ (let [grid
+       [[0 7 2 0 0 5 0 0 0]
+        [9 0 0 0 0 0 0 8 0]
+        [0 0 0 0 7 0 0 0 0]
+        [0 0 0 2 0 0 3 0 5]
+        [3 0 0 0 1 0 7 0 0]
+        [0 0 0 0 0 4 8 0 0]
+        [1 0 0 0 0 6 0 0 9]
+        [0 0 6 1 0 0 0 0 0]
+        [0 0 0 3 4 0 0 0 2]]]
+  (solve grid)))
