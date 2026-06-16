@@ -402,12 +402,35 @@
     (list? expr) (map #(substitute % old new) expr)
     :else expr))
 
+;; Problem 46
 (defn table [A B expr]
-  (let [a '(true false)
-        b '(true false)]
-    (map (fn [e] (map #(list % (substitute e B %))) b) (map #(substitute expr A %) a))))
+      (doseq [a [true false]
+              b [true false]]
+        (let [result
+              (eval `(let [~A ~a
+                           ~B ~b]
+                       ~expr))]
+          (println a b result)
+          (flush))))
+
+(table 'A 'B '(and A (or A B)))
+
 
 (table 'A 'B '(and A B))
+;; Problem 49 - Gray code
+
+(defn gray-add0 [lst]
+  (map #(format "0%s" %) lst))
+
+(defn gray-add1 [lst]
+  (map #(format "1%s" %) lst))
+
+(defn gray [N]
+  (if (= N 0) '("")
+    (let [gray-prev (gray (dec N))]
+      (concat (gray-add0 gray-prev) (gray-add1 (reverse gray-prev))))))
+
+(gray 1)
 
 ;; Problem 54A
 
