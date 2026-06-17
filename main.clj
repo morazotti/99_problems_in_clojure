@@ -1,4 +1,6 @@
 (require '[clojure.math :as m])
+(require '[clojure.walk :as walk])
+(ns p99.core)
 
 ;; Problem 01
 
@@ -419,16 +421,23 @@
 (table 'A 'B '(and A B))
 ;; Problem 49 - Gray code
 
-(defn gray-add0 [lst]
-  (map #(format "0%s" %) lst))
 
-(defn gray-add1 [lst]
-  (map #(format "1%s" %) lst))
+
+;; Problem 49 - Gray code
 
 (defn gray [N]
-  (if (= N 0) '("")
-    (let [gray-prev (gray (dec N))]
-      (concat (gray-add0 gray-prev) (gray-add1 (reverse gray-prev))))))
+  (letfn [(add0 [lst]
+            (map #(format "0%s" %) lst))
+          (add1 [lst]
+            (map #(format "1%s" %) lst))]
+    (if (= N 0) '("")
+    (let [prev (gray (dec N))]
+      (concat (add0 prev) (add1 (reverse prev)))))))
+
+(gray 4)
+
+;; Problem 50
+
 
 (gray 1)
 
@@ -558,7 +567,7 @@
 
 
 ;; Problem 97
-(ns sudoku.core)
+
 
 (defn empty-pos [g]
   ;; primeira posição com 0, ou nil se não há
