@@ -5,7 +5,7 @@
 ;; Problem 01
 
 (defn my-last [lst]
-  (if (empty? (rest lst)) (first lst) (my-last (rest lst))))
+      (if (empty? (rest lst)) (first lst) (my-last (rest lst))))
 
 (my-last '(a b c d))
 
@@ -37,6 +37,7 @@
   ([lst k] (cond
               (empty? lst) k
               :else (len (rest lst) (+ k 1)))))
+(len '(1 3 4))
 
 ;; Problem 05
 
@@ -364,7 +365,7 @@
 (defn primes
   ([hi] (primes 1 hi))
   ([lo hi] (filter prime? (my-range lo hi))))
-
+(primes 77)
 ;; Problem 40
 
 (defn goldbach
@@ -393,8 +394,7 @@
 ;; Problem 46
 
 (defn nor [x y] (not (or x y)))
-(defn xor [x y] (or (and x (not y))
-                    (and (not x) y)))
+(defn xor [x y] (not= x y))
 (defn impl [x y] (or x (not y)))
 (defn equ [x y] (not (xor x y)))
 
@@ -418,9 +418,23 @@
 (table 'A 'B '(and A (or A B)))
 
 
-(table 'A 'B '(and A B))
-;; Problem 49 - Gray code
+;; Problem 47 -- allowing infix notation
 
+
+;; Problem 48
+(defn table [vars expr]
+      (let [n (count vars)
+            possible (repeat n [true false])]
+        possible
+
+
+        ;; (nth (iterate (fn [seqs]
+        ;;                   (for [s seqs]
+        ;;                        [v [true false]]
+        ;;                        (conj (vec s) v)
+        ;;                        )
+        ;;                   )))
+        ))
 
 
 ;; Problem 49 - Gray code
@@ -439,15 +453,14 @@
 ;; Problem 50
 
 
-(gray 1)
 
 ;; Problem 54A
 
 (defn tree? [tree]
-  (cond
-    (nil? tree) true
-    (= 3 (count tree)) (apply (fn [x y] (and x y)) (map tree? (rest tree)))
-    :else false))
+      (cond
+       (nil? tree) true
+       (= 3 (count tree)) (apply (fn [x y] (and x y)) (map tree? (rest tree)))
+       :else false))
 
 ;; for fun
 (defn invert-tree [tree]
